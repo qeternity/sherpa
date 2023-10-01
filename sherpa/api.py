@@ -31,7 +31,7 @@ app = FastAPI()
 apm = make_apm_client(
     {
         "SERVER_URL": "https://apm.zuma.dev/",
-        "SERVICE_NAME": "sauron-13b",
+        "SERVICE_NAME": "sherpa",
         "SECRET_TOKEN": "",
         "SPAN_COMPRESSION_EXACT_MATCH_MAX_DURATION": "0ms",
     }
@@ -88,9 +88,10 @@ async def stream_data(req: GenerateRequest):
 
 
 if __name__ == "__main__":
-    config = AutoConfig.from_pretrained("/root/Nous-Hermes-Llama2-13b-GPTQ")
-    tokenizer = AutoTokenizer.from_pretrained("/root/Nous-Hermes-Llama2-13b-GPTQ")
-    model = Exllamav2HF.from_pretrained("/root/Nous-Hermes-Llama2-13b-GPTQ")
+    model_path = ""
+    config = AutoConfig.from_pretrained(model_path)
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    model = Exllamav2HF.from_pretrained(model_path)
     model.config = config
 
     guidance.llm = guidance.llms.Transformers(
