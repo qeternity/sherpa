@@ -11,6 +11,8 @@ model = Exllamav2HF.from_pretrained("/root/Nous-Hermes-Llama2-13b-GPTQ")
 
 guidance.llm = guidance.llms.Transformers(model, tokenizer, device=0)
 
-guidance(
-    """The best thing about the beach is {{~gen 'best' temperature=0.7 max_tokens=7}}"""
-)()
+print(
+    guidance(
+        """The best thing about the beach is {{~gen 'best' temperature=0.7 max_tokens=7}}"""
+    )()
+)
