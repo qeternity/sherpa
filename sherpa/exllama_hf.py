@@ -11,7 +11,7 @@ import torch
 from torch.nn import CrossEntropyLoss
 from transformers import GenerationConfig, PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutputWithPast
-from exllama.model import ExLlama, ExLlamaCache, ExLlamaConfig
+from model import ExLlama, ExLlamaCache, ExLlamaConfig
 
 logger = logging.getLogger(__name__)
 
