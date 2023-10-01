@@ -4,3 +4,6 @@
 [submodule "exllama"]
 	path = exllama
 	url = https://github.com/turboderp/exllama
+[submodule "guidance"]
+	path = guidance
+	url = https://github.com/zumalabs/guidance
