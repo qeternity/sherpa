@@ -4,19 +4,26 @@ sys.path.append("/root/sherpa/exllamav2")
 sys.path.append("/root/sherpa/guidance")
 import guidance
 from transformers import AutoConfig, AutoTokenizer
-from exllamav2_hf import Exllamav2HF
 
-config = AutoConfig.from_pretrained("/root/Nous-Hermes-Llama2-13b-GPTQ")
-tokenizer = AutoTokenizer.from_pretrained("/root/Nous-Hermes-Llama2-13b-GPTQ")
-model = Exllamav2HF.from_pretrained("/root/Nous-Hermes-Llama2-13b-GPTQ")
+model_path = "/root/Nous-Hermes-Llama2-13b-GPTQ"
+config = AutoConfig.from_pretrained(model_path)
+tokenizer = AutoTokenizer.from_pretrained(model_path)
+
+from exllama_hf import ExllamaHF
+
+model = ExllamaHF.from_pretrained(model_path)
+
+# from exllamav2_hf import Exllamav2HF
+# model = Exllamav2HF.from_pretrained(model_path)
+
 model.config = config
 
 guidance.llm = guidance.llms.Transformers(
     model,
     tokenizer,
-    device=0,
     caching=False,
     acceleration=False,
+    device=0,
 )
 
 generated = guidance(
