@@ -3,17 +3,18 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
-sys.path.append("../exllamav2")
-sys.path.append("../guidance")
+sys.path.append("/root/sherpa/exllamav2")
+sys.path.append("/root/sherpa/guidance")
+
+# from modules import shared
+import logging
 
 import torch
-from exllamav2 import ExLlamaV2, ExLlamaV2Cache, ExLlamaV2Config
 from torch.nn import CrossEntropyLoss
 from transformers import GenerationConfig, PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutputWithPast
 
-from modules import shared
-import logging
+from exllamav2 import ExLlamaV2, ExLlamaV2Cache, ExLlamaV2Config
 
 logger = logging.getLogger(__name__)
 
