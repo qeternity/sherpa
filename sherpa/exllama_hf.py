@@ -2,13 +2,13 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
+import logging
 import torch
 from torch.nn import CrossEntropyLoss
 from transformers import GenerationConfig, PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutputWithPast
 
-from modules import shared
-from modules.logging_colors import logger
+logger = logging.getLogger(__name__)
 
 try:
     from exllama.model import ExLlama, ExLlamaCache, ExLlamaConfig
