@@ -53,7 +53,7 @@ async def stream_data(req: GenerateRequest):
         t0 = time.time()
         # output = guidance(req.prompt)(**req.options)
         with elasticapm.capture_span("guidance"):
-            output = guidance(req.prompt, caching=False, accelerate=True)()
+            output = guidance(req.prompt)()
         t1 = time.time()
         _sec = t1 - t0
         print(f"Output generated in {_sec}")
