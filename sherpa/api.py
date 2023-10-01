@@ -42,20 +42,7 @@ semaphore = asyncio.Semaphore(1)
 
 
 class GenerateRequest(BaseModel):
-    message: str
-    prompt: Optional[str] = None
-    max_new_tokens: Optional[int] = 200
-    temperature: Optional[float] = 0.7
-    top_k: Optional[int] = 20
-    top_p: Optional[float] = 0.65
-    min_p: Optional[float] = 0.06
-    token_repetition_penalty_max: Optional[float] = 1.15
-    token_repetition_penalty_sustain: Optional[int] = 256
-    token_repetition_penalty_decay: Optional[int] = None
-    stream: Optional[bool] = True
-    # options:
-    # break_on_newline: Optional[str] = None
-    options: Optional[Dict[str, Any]] = {}
+    prompt: str
 
 
 @app.post("/generate")
