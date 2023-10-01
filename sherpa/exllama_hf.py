@@ -1,31 +1,19 @@
 import os
+import sys
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
+
+sys.path.append("/root/sherpa/exllama")
+sys.path.append("/root/sherpa/guidance")
 
 import logging
 import torch
 from torch.nn import CrossEntropyLoss
 from transformers import GenerationConfig, PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutputWithPast
+from exllama.model import ExLlama, ExLlamaCache, ExLlamaConfig
 
 logger = logging.getLogger(__name__)
-
-try:
-    from exllama.model import ExLlama, ExLlamaCache, ExLlamaConfig
-except:
-    logger.warning(
-        "Exllama module failed to load. Will attempt to load from repositories."
-    )
-    try:
-        from modules.relative_imports import RelativeImport
-
-        with RelativeImport("repositories/exllama"):
-            from model import ExLlama, ExLlamaCache, ExLlamaConfig
-    except:
-        logger.error(
-            "Could not find repositories/exllama/. Make sure that exllama is cloned inside repositories/ and is up to date."
-        )
-        raise
 
 
 class ExllamaHF(PreTrainedModel):
