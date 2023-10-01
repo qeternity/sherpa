@@ -9,6 +9,7 @@ sys.path.append("/root/sherpa/guidance")
 # from modules import shared
 import logging
 
+import elasticapm
 import torch
 from torch.nn import CrossEntropyLoss
 from transformers import GenerationConfig, PretrainedConfig, PreTrainedModel
@@ -64,6 +65,7 @@ class Exllamav2HF(PreTrainedModel):
     def device(self) -> torch.device:
         return torch.device(0)
 
+    @elasticapm.capture_span("__call__")
     def __call__(self, *args, **kwargs):
         use_cache = kwargs.get("use_cache", True)
         labels = kwargs.get("labels", None)
