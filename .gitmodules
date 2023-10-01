@@ -1,9 +1,6 @@
 [submodule "exllamav2"]
 	path = exllamav2
 	url = https://github.com/turboderp/exllamav2
-[submodule "guidance"]
-	path = guidance
-	url = https://github.com/guidance-ai/guidance
 [submodule "exllama"]
 	path = exllama
 	url = https://github.com/turboderp/exllama
