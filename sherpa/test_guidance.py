@@ -16,7 +16,7 @@ guidance.llm = guidance.llms.Transformers(
     tokenizer,
     device=0,
     caching=False,
-    accelerate=False,
+    acceleration=False,
 )
 
 generated = guidance(
