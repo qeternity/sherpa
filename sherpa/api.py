@@ -1,22 +1,21 @@
 import asyncio
 import json
+import sys
 import time
 from typing import Any, Dict, List, Optional, Union
+
+sys.path.append("/root/sherpa/exllamav2")
+sys.path.append("/root/sherpa/guidance")
 
 import elasticapm
 import torch
 import uvicorn
 from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
+from exllamav2_hf import Exllamav2HF
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from generator import ExLlamaGenerator
-from llama_cpp_guidance.llm import LlamaCpp
-from model import ExLlama, ExLlamaCache, ExLlamaConfig
 from pydantic import BaseModel
-from tokenizer import ExLlamaTokenizer
-from transformers import AutoTokenizer
-from transformers.generation import SampleDecoderOnlyOutput
-from transformers.generation.streamers import BaseStreamer
+from transformers import AutoConfig, AutoTokenizer
 
 import guidance
 
@@ -89,58 +88,18 @@ async def stream_data(req: GenerateRequest):
 
 
 if __name__ == "__main__":
-    from test_guidance import Model, Tokenizer
+    config = AutoConfig.from_pretrained("/root/Nous-Hermes-Llama2-13b-GPTQ")
+    tokenizer = AutoTokenizer.from_pretrained("/root/Nous-Hermes-Llama2-13b-GPTQ")
+    model = Exllamav2HF.from_pretrained("/root/Nous-Hermes-Llama2-13b-GPTQ")
+    model.config = config
 
-    # _config = ExLlamaConfig('/root/wizardLM-13B-1.0-GPTQ/config.json')
-    # _config.model_path = '/root/wizardLM-13B-1.0-GPTQ/WizardLM-13B-1.0-GPTQ-4bit-128g.no-act-order.safetensors'
-    # _tokenizer = ExLlamaTokenizer('/root/wizardLM-13B-1.0-GPTQ/tokenizer.model')
-    # tokenizer = AutoTokenizer.from_pretrained('/root/wizardLM-13B-1.0-GPTQ/')
-    # _config = ExLlamaConfig('/root/wizardLM-7B-GPTQ/config.json')
-    # _config.model_path = '/root/wizardLM-7B-GPTQ/wizardLM-7B-GPTQ-4bit.compat.no-act-order.safetensors'
-    # _tokenizer = ExLlamaTokenizer('/root/wizardLM-7B-GPTQ/tokenizer.model')
-    # tokenizer = AutoTokenizer.from_pretrained('/root/wizardLM-7B-GPTQ/')
-    # _config = ExLlamaConfig('/root/llama-7b-gptq-4bit-128g/config.json')
-    # _config.model_path = '/root/llama-7b-gptq-4bit-128g/llama7b-gptq-4bit-128g.safetensors'
-    # _tokenizer = ExLlamaTokenizer('/root/llama-7b-gptq-4bit-128g/tokenizer.model')
-    # tokenizer = AutoTokenizer.from_pretrained('/root/llama-7b-gptq-4bit-128g/', use_fast=True)
-    # _config = ExLlamaConfig('/root/Llama-2-13B-GPTQ/config.json')
-    # _config.model_path = '/root/Llama-2-13B-GPTQ/gptq_model-4bit-128g.safetensors'
-    # _tokenizer = ExLlamaTokenizer('/root/Llama-2-13B-GPTQ/tokenizer.model')
-    # tokenizer = AutoTokenizer.from_pretrained('/root/Llama-2-13B-GPTQ/', use_fast=True)
-
-    _config = ExLlamaConfig("/root/Nous-Hermes-Llama2-13b-GPTQ/config.json")
-    _config.model_path = (
-        "/root/Nous-Hermes-Llama2-13b-GPTQ/gptq_model-4bit-32g.safetensors"
-    )
-    _tokenizer = ExLlamaTokenizer("/root/Nous-Hermes-Llama2-13b-GPTQ/tokenizer.model")
-    tokenizer = AutoTokenizer.from_pretrained(
-        "/root/Nous-Hermes-Llama2-13b-GPTQ/", use_fast=True
-    )
-
-    # _config = ExLlamaConfig('/root/OpenOrca-Platypus2-13B-GPTQ/config.json')
-    # _config.model_path = '/root/OpenOrca-Platypus2-13B-GPTQ/gptq_model-4bit-128g.safetensors'
-    # _tokenizer = ExLlamaTokenizer('/root/OpenOrca-Platypus2-13B-GPTQ/tokenizer.model')
-    # tokenizer = AutoTokenizer.from_pretrained('/root/OpenOrca-Platypus2-13B-GPTQ/', use_fast=True)
-    # tokenizer = Tokenizer(_tokenizer, _config)
-    # _config = ExLlamaConfig('/root/LLongMA-2-7B-GPTQ/config.json')
-    # _config.model_path = '/root/LLongMA-2-7B-GPTQ/gptq_model-4bit-128g.safetensors'
-    # _tokenizer = ExLlamaTokenizer('/root/LLongMA-2-7B-GPTQ/tokenizer.model')
-    # tokenizer = AutoTokenizer.from_pretrained('/root/LLongMA-2-7B-GPTQ/')
-
-    _model = ExLlama(_config)
-    generator = ExLlamaGenerator(_model, _tokenizer, ExLlamaCache(_model))
-    model = Model(generator)
     guidance.llm = guidance.llms.Transformers(
-        model=model, tokenizer=tokenizer, caching=False
+        model,
+        tokenizer,
+        caching=False,
+        acceleration=False,
+        device=0,
     )
 
-    # from pathlib import Path
-    # guidance.llm = LlamaCpp(
-    #     model_path=Path("/root/Nous-Hermes-Llama2-GGUF/nous-hermes-llama2-13b.Q5_K_M.gguf"),
-    #     n_gpu_layers=1000,
-    #     n_threads=8
-    # )
-
-    # [start fastapi]:
     _PORT = 8001
     uvicorn.run(app, host="0.0.0.0", port=_PORT)
