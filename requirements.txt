@@ -1,0 +1,2 @@
+fastapi==0.103.2
+elastic-apm==6.18.0
