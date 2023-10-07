@@ -13,6 +13,7 @@ import torch
 import uvicorn
 from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
 from exllamav2_hf import Exllamav2HF
+from exllama_hf import ExllamaHF
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
