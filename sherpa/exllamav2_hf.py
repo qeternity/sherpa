@@ -15,7 +15,7 @@ from torch.nn import CrossEntropyLoss
 from transformers import GenerationConfig, PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutputWithPast
 
-from exllamav2 import ExLlamaV2, ExLlamaV2Cache, ExLlamaV2Config
+from exllamav2 import ExLlamaV2, ExLlamaV2Config, ExLlamaV2Cache_8bit
 
 logger = logging.getLogger(__name__)
 
@@ -36,22 +36,15 @@ class Exllamav2HF(PreTrainedModel):
         super().__init__(PretrainedConfig())
         self.ex_config = config
         self.ex_model = ExLlamaV2(config)
-        split = None
+        self.ex_cache = ExLlamaV2Cache_8bit(self.ex_model, lazy=True)
 
-        # if shared.args.gpu_split:
-        #     split = [float(alloc) for alloc in shared.args.gpu_split.split(",")]
-
-        self.ex_model.load(split)
+        self.ex_model.load_autosplit(self.ex_cache)
 
         self.generation_config = GenerationConfig()
         self.loras = None
 
-        self.ex_cache = ExLlamaV2Cache(self.ex_model)
         self.past_seq = None
 
-        # if shared.args.cfg_cache:
-        #     self.ex_cache_negative = ExLlamaV2Cache(self.ex_model)
-        #     self.past_seq_negative = None
 
     def _validate_model_class(self):
         pass
@@ -164,6 +157,8 @@ class Exllamav2HF(PreTrainedModel):
             shift_labels = shift_labels.to(shift_logits.device)
             loss = loss_fct(shift_logits, shift_labels)
 
+        # Exllama lazy cache pads tensor lengths for some reason, so trim those back
+        logits = logits[:, :, :self.ex_config.vocab_size]
         return CausalLMOutputWithPast(
             logits=logits, past_key_values=seq if use_cache else None, loss=loss
         )
