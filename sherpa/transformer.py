@@ -59,6 +59,7 @@ class Transformers(LLM):
         self.device = self.model_obj.device  # otherwise note the current device
 
         self._token_prefix_map = self._build_token_prefix_map(model)
+        print(self._token_prefix_map)
 
     def new_string_builder(self, starting_ids=None):
         return TransformersStringBuilder(self.tokenizer, starting_ids)

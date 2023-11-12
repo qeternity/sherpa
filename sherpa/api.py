@@ -104,8 +104,8 @@ if __name__ == "__main__":
     ex_config = ExLlamaV2Config()
     ex_config.model_dir = model_path
     ex_config.prepare()
-    # tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
-    tokenizer = ExLlamaV2Tokenizer(ex_config)
+    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+    # tokenizer = ExLlamaV2Tokenizer(ex_config)
     model = Exllamav2HF.from_pretrained(model_path)
     model.config = config
 
