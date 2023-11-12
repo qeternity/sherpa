@@ -329,21 +329,9 @@ class TransformersSession(LLMSession):
         elif do_sample is False and temperature > 0:
             generate_args["do_sample"] = True
 
-        # if we are streaming then we need to run the inference process in a separate thread
-        if stream:
-            generate_args["streamer"] = streamer
-            thread = threading.Thread(
-                target=self.llm.model_obj.generate, kwargs=generate_args
-            )
-            thread.start()
-            return self._stream_then_save(streamer, key, thread)
-
-        # if we are not streaming we still manually use the streamer for consistency
-        else:
-            generated_sequence = self.llm.model_obj.generate(**generate_args)
-            streamer.put(generated_sequence)
-            self.llm.cache[key] = streamer.__next__()
-        return llm_cache[key]
+        generated_sequence = self.llm.model_obj.generate(**generate_args)
+        streamer.put(generated_sequence)
+        return streamer
 
     def __exit__(self, exc_type, exc_value, traceback):
         return False
