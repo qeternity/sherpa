@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from transformers import AutoConfig, AutoTokenizer
 
 import guidance
-from sherpa.transformer import Transformers
+from transformer import Transformers
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str, required=True, help="model path")
