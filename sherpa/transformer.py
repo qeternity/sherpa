@@ -25,6 +25,8 @@ class Transformers(LLM):
         model=None,
         tokenizer=None,
         ex_tokenizer=None,
+        generator=None,
+        settings=None,
         caching=True,
         token_healing=True,
         acceleration=True,
@@ -48,6 +50,8 @@ class Transformers(LLM):
             model, tokenizer, **kwargs
         )
         self.ex_tokenizer = ex_tokenizer
+        self.generator = generator
+        self.settings = settings
 
         self.model_name = model if isinstance(model, str) else model.__class__.__name__
         self.caching = caching
@@ -327,8 +331,13 @@ class TransformersSession(LLMSession):
         elif do_sample is False and temperature > 0:
             generate_args["do_sample"] = True
 
-        generated_sequence = self.llm.model_obj.generate(**generate_args)
-        streamer.put(generated_sequence)
+        # generated_sequence = self.llm.model_obj.generate(**generate_args)
+        self.generator.begin_stream(input_ids, self.ex_settings)
+        while True:
+            chunk, eos, tokens = self.generator.stream()
+            if eos or len(tokens) >= 500:
+                break
+        streamer.put(chunk)
         return streamer.__next__()
 
     def __exit__(self, exc_type, exc_value, traceback):

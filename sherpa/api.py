@@ -24,6 +24,7 @@ from exllamav2 import (
     ExLlamaV2Config,
     ExLlamaV2Cache,
     ExLlamaV2Tokenizer,
+    ExLlamaV2Sampler,
 )
 from exllamav2.generator import ExLlamaV2StreamingGenerator
 
@@ -108,12 +109,15 @@ if __name__ == "__main__":
     ex_tokenizer = ExLlamaV2Tokenizer(ex_config)
     model = Exllamav2HF.from_pretrained(model_path)
     model.config = config
+    generator = ExLlamaV2StreamingGenerator(model, model.cache, tokenizer)
+    settings = ExLlamaV2Sampler.Settings()
 
     guidance.llm = Transformers(
         model,
         tokenizer,
         ex_tokenizer,
-        # generator,
+        generator,
+        settings,
         caching=False,
         acceleration=False,
         do_sample=False,
