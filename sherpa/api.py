@@ -111,7 +111,7 @@ if __name__ == "__main__":
     ex_tokenizer = ExLlamaV2Tokenizer(ex_config)
     model = Exllamav2HF.from_pretrained(model_path)
     model.config = config
-    generator = ExLlamaV2StreamingGenerator(model, model.cache, tokenizer)
+    generator = ExLlamaV2StreamingGenerator(model.ex_model, model.ex_cache, tokenizer)
     settings = ExLlamaV2Sampler.Settings()
 
     guidance.llm = Transformers(
