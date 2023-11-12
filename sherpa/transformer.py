@@ -11,6 +11,8 @@ import queue
 import threading
 import collections.abc
 from guidance.llms._llm import LLM, LLMSession, SyncSession
+import torch
+import transformers
 
 
 class Transformers(LLM):
