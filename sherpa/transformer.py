@@ -105,7 +105,7 @@ class Transformers(LLM):
         if isinstance(model, str):
             # make sure transformers is installed
             try:
-                import sherpa.transformer as transformer
+                import transformers
             except:
                 raise Exception(
                     "Please install transformers with `pip install transformers` in order to use guidance.llms.Transformers!"
@@ -262,7 +262,7 @@ class TransformersSession(LLMSession):
         in_cache = key in llm_cache
         not_caching = (caching is not True and not self.llm.caching) or caching is False
         if not in_cache or not_caching:
-            import sherpa.transformer as transformer
+            import transformers
 
             assert (
                 prompt != ""
