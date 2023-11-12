@@ -19,6 +19,14 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from transformers import AutoConfig, AutoTokenizer
 
+from exllamav2 import (
+    ExLlamaV2,
+    ExLlamaV2Config,
+    ExLlamaV2Cache,
+    ExLlamaV2Tokenizer,
+)
+from exllamav2.generator import ExLlamaV2StreamingGenerator
+
 import guidance
 from transformer import Transformers
 
@@ -80,6 +88,18 @@ async def stream_data(req: GenerateRequest):
 if __name__ == "__main__":
     args = parser.parse_args()
     model_path = args.model
+
+    # config = ExLlamaV2Config()
+    # config.model_dir = model_path
+    # config.prepare()
+
+    # model = ExLlamaV2(config)
+    # cache = ExLlamaV2Cache(model, lazy=True)
+    # model.load_autosplit(cache)
+
+    # tokenizer = ExLlamaV2Tokenizer(config)
+    # generator = ExLlamaV2StreamingGenerator(model, cache, tokenizer)
+
     config = AutoConfig.from_pretrained(model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
     model = Exllamav2HF.from_pretrained(model_path)
@@ -88,6 +108,7 @@ if __name__ == "__main__":
     guidance.llm = Transformers(
         model,
         tokenizer,
+        # generator,
         caching=False,
         acceleration=False,
         do_sample=False,
