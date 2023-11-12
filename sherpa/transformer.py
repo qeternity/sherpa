@@ -185,9 +185,8 @@ class TransformersSession(LLMSession):
         )  # make sure the end of sequence token is always included
 
         encoded = self.llm.encode(prompt)
-        encoded = torch.tensor([encoded for _ in range(n)])
-        if self.llm.device is not None:
-            encoded = encoded.to(self.llm.device)
+        # if self.llm.device is not None:
+        #     encoded = encoded.to(self.llm.device)
         input_ids = encoded  # ["input_ids"]
         # attention_mask = encoded["attention_mask"]
         model_config = self.llm.model_obj.config
