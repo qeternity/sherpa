@@ -45,7 +45,6 @@ class Exllamav2HF(PreTrainedModel):
 
         self.past_seq = None
 
-
     def _validate_model_class(self):
         pass
 
@@ -126,13 +125,14 @@ class Exllamav2HF(PreTrainedModel):
                         loras=self.loras,
                     )
 
-            logits = (
-                self.ex_model.forward(
-                    seq_tensor[-1:].view(1, -1), ex_cache, loras=self.loras
+            with elasticapm.capture_span("forward"):
+                logits = (
+                    self.ex_model.forward(
+                        seq_tensor[-1:].view(1, -1), ex_cache, loras=self.loras
+                    )
+                    .to(input_ids.device)
+                    .float()
                 )
-                .to(input_ids.device)
-                .float()
-            )
         else:
             ex_cache.current_seq_len = 0
             logits = self.ex_model.forward(
@@ -158,7 +158,7 @@ class Exllamav2HF(PreTrainedModel):
             loss = loss_fct(shift_logits, shift_labels)
 
         # Exllama lazy cache pads tensor lengths for some reason, so trim those back
-        logits = logits[:, :, :self.ex_config.vocab_size]
+        logits = logits[:, :, : self.ex_config.vocab_size]
         return CausalLMOutputWithPast(
             logits=logits, past_key_values=seq if use_cache else None, loss=loss
         )
