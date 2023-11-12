@@ -332,7 +332,7 @@ class TransformersSession(LLMSession):
             generate_args["do_sample"] = True
 
         # generated_sequence = self.llm.model_obj.generate(**generate_args)
-        self.llm.generator.begin_stream(input_ids, self.llm.ex_settings)
+        self.llm.generator.begin_stream(input_ids, self.llm.settings)
         while True:
             chunk, eos, tokens = self.llm.generator.stream()
             if eos or len(tokens) >= 500:
