@@ -20,6 +20,7 @@ from pydantic import BaseModel
 from transformers import AutoConfig, AutoTokenizer
 
 import guidance
+from .transformers import Transformers
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str, required=True, help="model path")
@@ -88,7 +89,7 @@ if __name__ == "__main__":
     model = Exllamav2HF.from_pretrained(model_path)
     model.config = config
 
-    guidance.llm = guidance.llms.Transformers(
+    guidance.llm = Transformers(
         model,
         tokenizer,
         caching=False,

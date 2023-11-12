@@ -45,7 +45,6 @@ class Exllamav2HF(PreTrainedModel):
 
         self.past_seq = None
 
-
     def _validate_model_class(self):
         pass
 
@@ -158,7 +157,7 @@ class Exllamav2HF(PreTrainedModel):
             loss = loss_fct(shift_logits, shift_labels)
 
         # Exllama lazy cache pads tensor lengths for some reason, so trim those back
-        logits = logits[:, :, :self.ex_config.vocab_size]
+        logits = logits[:, :, : self.ex_config.vocab_size]
         return CausalLMOutputWithPast(
             logits=logits, past_key_values=seq if use_cache else None, loss=loss
         )
