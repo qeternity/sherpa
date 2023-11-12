@@ -101,8 +101,8 @@ if __name__ == "__main__":
     # generator = ExLlamaV2StreamingGenerator(model, cache, tokenizer)
 
     config = AutoConfig.from_pretrained(model_path)
-    # tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
-    tokenizer = ExLlamaV2Tokenizer(config)
+    tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+    # tokenizer = ExLlamaV2Tokenizer(config)
     model = Exllamav2HF.from_pretrained(model_path)
     model.config = config
 
