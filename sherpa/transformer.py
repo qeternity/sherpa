@@ -168,168 +168,168 @@ class TransformersSession(LLMSession):
             prompt != ""
         ), "You must provide a non-zero length prompt to the Transformers language model!"
 
-        # fill in defaults
-        if temperature is None:
-            temperature = self.llm.temperature
-        if token_healing is None:
-            token_healing = self.llm.token_healing
+        # # fill in defaults
+        # if temperature is None:
+        #     temperature = self.llm.temperature
+        # if token_healing is None:
+        #     token_healing = self.llm.token_healing
 
-        # set the stop patterns
-        if stop is not None:
-            if isinstance(stop, str):
-                stop_regex = [regex.escape(stop)]
-            else:
-                stop_regex = [regex.escape(s) for s in stop]
-        if isinstance(stop_regex, str):
-            stop_regex = [stop_regex]
-        if stop_regex is None:
-            stop_regex = []
-        stop_regex.append(
-            regex.escape(self.llm.tokenizer.eos_token)
-        )  # make sure the end of sequence token is always included
+        # # set the stop patterns
+        # if stop is not None:
+        #     if isinstance(stop, str):
+        #         stop_regex = [regex.escape(stop)]
+        #     else:
+        #         stop_regex = [regex.escape(s) for s in stop]
+        # if isinstance(stop_regex, str):
+        #     stop_regex = [stop_regex]
+        # if stop_regex is None:
+        #     stop_regex = []
+        # stop_regex.append(
+        #     regex.escape(self.llm.tokenizer.eos_token)
+        # )  # make sure the end of sequence token is always included
 
         encoded = self.llm.encode(prompt)
         # if self.llm.device is not None:
         #     encoded = encoded.to(self.llm.device)
         input_ids = encoded  # ["input_ids"]
         # attention_mask = encoded["attention_mask"]
-        model_config = self.llm.model_obj.config
+        # model_config = self.llm.model_obj.config
 
-        # ensure that we are extending a common sequence batch (our token healing assumes this right now)
-        assert (
-            input_ids[0, -1] == input_ids[:, -1]
-        ).all(), "The current token healing implementation assumes that batches are reps of the same sequence!"
+        # # ensure that we are extending a common sequence batch (our token healing assumes this right now)
+        # assert (
+        #     input_ids[0, -1] == input_ids[:, -1]
+        # ).all(), "The current token healing implementation assumes that batches are reps of the same sequence!"
 
-        healed_token_ids = []
-        processors = []
-        stoppers = []
+        # healed_token_ids = []
+        # processors = []
+        # stoppers = []
 
-        # save what the prompt looks like when coded and then decoded (this captures added start tokens, etc.)
+        # # save what the prompt looks like when coded and then decoded (this captures added start tokens, etc.)
         coded_prompt = self.llm.decode(input_ids[0])
 
-        # setup token healing
-        if token_healing:
-            healer = TokenHealingLogitsProcessor(
-                self.llm, model_config.vocab_size, input_ids[0]
-            )
-            healed_token_ids = healer.healed_token_ids
-            if len(healed_token_ids) > 0:
-                input_ids = input_ids[:, : -len(healed_token_ids)]
-                # attention_mask = attention_mask[:,:-len(healed_token_ids)]
-                max_tokens += len(
-                    healed_token_ids
-                )  # increase to account for the tokens we regen for token healing
-                processors.append(healer)
+        # # setup token healing
+        # if token_healing:
+        #     healer = TokenHealingLogitsProcessor(
+        #         self.llm, model_config.vocab_size, input_ids[0]
+        #     )
+        #     healed_token_ids = healer.healed_token_ids
+        #     if len(healed_token_ids) > 0:
+        #         input_ids = input_ids[:, : -len(healed_token_ids)]
+        #         # attention_mask = attention_mask[:,:-len(healed_token_ids)]
+        #         max_tokens += len(
+        #             healed_token_ids
+        #         )  # increase to account for the tokens we regen for token healing
+        #         processors.append(healer)
 
-        # setup logit biasing
-        if logit_bias is not None:
-            processors.append(
-                BiasLogitsProcessor(self.llm, model_config.vocab_size, logit_bias)
-            )
+        # # setup logit biasing
+        # if logit_bias is not None:
+        #     processors.append(
+        #         BiasLogitsProcessor(self.llm, model_config.vocab_size, logit_bias)
+        #     )
 
-        # find the max context length
-        possible_attributes = [
-            "max_sequence_length",
-            "max_seq_len",
-            "model_max_length",
-            "n_positions",
-            "max_position_embeddings",
-        ]
-        max_context = None
-        for obj in [model_config, self.llm.tokenizer]:
-            for attr in possible_attributes:
-                if max_context is None:
-                    max_context = getattr(obj, attr, None)
-                else:
-                    break
-        assert (
-            max_context is not None
-        ), "Could not find a max context length for the model! Tried: " + ", ".join(
-            possible_attributes
-        )
+        # # find the max context length
+        # possible_attributes = [
+        #     "max_sequence_length",
+        #     "max_seq_len",
+        #     "model_max_length",
+        #     "n_positions",
+        #     "max_position_embeddings",
+        # ]
+        # max_context = None
+        # for obj in [model_config, self.llm.tokenizer]:
+        #     for attr in possible_attributes:
+        #         if max_context is None:
+        #             max_context = getattr(obj, attr, None)
+        #         else:
+        #             break
+        # assert (
+        #     max_context is not None
+        # ), "Could not find a max context length for the model! Tried: " + ", ".join(
+        #     possible_attributes
+        # )
 
-        # make sure we don't run off the end of the model
-        if max_tokens + len(input_ids[0]) > max_context:
-            max_tokens = max_context - len(input_ids[0])
+        # # make sure we don't run off the end of the model
+        # if max_tokens + len(input_ids[0]) > max_context:
+        #     max_tokens = max_context - len(input_ids[0])
 
-        # find how much of the prompt is cached
-        prefix_match_len = 0
-        for token in input_ids[0]:
-            if (
-                prefix_match_len >= len(self._prefix_cache)
-                or token != self._prefix_cache[prefix_match_len]
-            ):
-                break
-            else:
-                prefix_match_len += 1
+        # # find how much of the prompt is cached
+        # prefix_match_len = 0
+        # for token in input_ids[0]:
+        #     if (
+        #         prefix_match_len >= len(self._prefix_cache)
+        #         or token != self._prefix_cache[prefix_match_len]
+        #     ):
+        #         break
+        #     else:
+        #         prefix_match_len += 1
 
-        # we always need to run the model on at least one token so transformers is happy
-        if prefix_match_len == len(input_ids[0]):
-            prefix_match_len -= 1
+        # # we always need to run the model on at least one token so transformers is happy
+        # if prefix_match_len == len(input_ids[0]):
+        #     prefix_match_len -= 1
 
-        # trim the cache to what we can use
-        if prefix_match_len < len(self._prefix_cache):  # prefix_match_len > 0 and
-            self._past_key_values = tuple(
-                (key[:, :, :prefix_match_len, :], value[:, :, :prefix_match_len, :])
-                for key, value in self._past_key_values
-            )  # TODO: this is specific to the GPT2 tensor layout
-            self._prefix_cache = self._prefix_cache[:prefix_match_len]
+        # # trim the cache to what we can use
+        # if prefix_match_len < len(self._prefix_cache):  # prefix_match_len > 0 and
+        #     self._past_key_values = tuple(
+        #         (key[:, :, :prefix_match_len, :], value[:, :, :prefix_match_len, :])
+        #         for key, value in self._past_key_values
+        #     )  # TODO: this is specific to the GPT2 tensor layout
+        #     self._prefix_cache = self._prefix_cache[:prefix_match_len]
 
-        # add support for pattern guidance
-        if pattern is not None:
-            processors.append(
-                RegexLogitsProcessor(
-                    pattern,
-                    stop_regex,
-                    self.llm,
-                    model_config.vocab_size,
-                    temperature == 0,
-                    len(coded_prompt),
-                    self.llm.tokenizer.eos_token_id,
-                )
-            )
+        # # add support for pattern guidance
+        # if pattern is not None:
+        #     processors.append(
+        #         RegexLogitsProcessor(
+        #             pattern,
+        #             stop_regex,
+        #             self.llm,
+        #             model_config.vocab_size,
+        #             temperature == 0,
+        #             len(coded_prompt),
+        #             self.llm.tokenizer.eos_token_id,
+        #         )
+        #     )
 
-        if stop_regex is not None:
-            stoppers.append(
-                RegexStoppingCriteria(stop_regex, self.llm, len(coded_prompt))
-            )
+        # if stop_regex is not None:
+        #     stoppers.append(
+        #         RegexStoppingCriteria(stop_regex, self.llm, len(coded_prompt))
+        #     )
 
         # a streamer to handle potentially partial output
         streamer = TransformersStreamer(
             input_ids=input_ids,
             stop_regex=stop_regex,
-            healed_token_ids=healed_token_ids,
+            healed_token_ids=[],
             prefix_length=len(coded_prompt),
             llm=self.llm,
             max_new_tokens=max_tokens,
             logprobs=logprobs,
         )
 
-        # the args for the transformers generate call
-        generate_args = dict(
-            inputs=input_ids,
-            # attention_mask=attention_mask,
-            # position_ids=position_ids,
-            temperature=temperature,
-            max_new_tokens=max_tokens,
-            top_p=top_p,
-            pad_token_id=model_config.pad_token_id
-            if model_config.pad_token_id is not None
-            else self.llm.tokenizer.eos_token_id,
-            logits_processor=transformers.LogitsProcessorList(processors),
-            stopping_criteria=transformers.StoppingCriteriaList(stoppers),
-            # past_key_values=self._past_key_values,
-            output_scores=logprobs is not None and logprobs > 0,
-            return_dict_in_generate=True,
-            **generate_kwargs
-        )
+        # # the args for the transformers generate call
+        # generate_args = dict(
+        #     inputs=input_ids,
+        #     # attention_mask=attention_mask,
+        #     # position_ids=position_ids,
+        #     temperature=temperature,
+        #     max_new_tokens=max_tokens,
+        #     top_p=top_p,
+        #     pad_token_id=model_config.pad_token_id
+        #     if model_config.pad_token_id is not None
+        #     else self.llm.tokenizer.eos_token_id,
+        #     logits_processor=transformers.LogitsProcessorList(processors),
+        #     stopping_criteria=transformers.StoppingCriteriaList(stoppers),
+        #     # past_key_values=self._past_key_values,
+        #     output_scores=logprobs is not None and logprobs > 0,
+        #     return_dict_in_generate=True,
+        #     **generate_kwargs
+        # )
 
-        # override the model config for do_sample when the temperature requires it
-        do_sample = getattr(model_config, "do_sample", None)
-        if do_sample is True and temperature == 0:
-            generate_args["do_sample"] = False
-        elif do_sample is False and temperature > 0:
-            generate_args["do_sample"] = True
+        # # override the model config for do_sample when the temperature requires it
+        # do_sample = getattr(model_config, "do_sample", None)
+        # if do_sample is True and temperature == 0:
+        #     generate_args["do_sample"] = False
+        # elif do_sample is False and temperature > 0:
+        #     generate_args["do_sample"] = True
 
         # generated_sequence = self.llm.model_obj.generate(**generate_args)
         self.llm.generator.begin_stream(input_ids, self.llm.settings)
