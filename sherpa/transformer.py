@@ -74,7 +74,7 @@ class Transformers(LLM):
         return self.ex_tokenizer.encode(string)
 
     def decode(self, tokens, **kwargs):
-        return self.tokenizer.decode(tokens)
+        return self.ex_tokenizer.decode(tokens)
 
     def id_to_token(self, id):
         return self.tokenizer.convert_ids_to_tokens([id])[0]
