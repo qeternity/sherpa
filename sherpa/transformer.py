@@ -47,6 +47,7 @@ class Transformers(LLM):
         self.model_obj, self.tokenizer = self._model_and_tokenizer(
             model, tokenizer, **kwargs
         )
+        self.ex_tokenizer = ex_tokenizer
 
         self.model_name = model if isinstance(model, str) else model.__class__.__name__
         self.caching = caching
@@ -59,16 +60,14 @@ class Transformers(LLM):
             self.model_obj = self.model_obj.to(device)
         self.device = self.model_obj.device  # otherwise note the current device
 
-        self._token_prefix_map = self._build_token_prefix_map(model)
-
     def new_string_builder(self, starting_ids=None):
         return TransformersStringBuilder(self.tokenizer, starting_ids)
 
     def prefix_matches(self, prefix):
-        """Return the list of tokens that match the given prefix."""
-        return [v for arr in self._token_prefix_map.values(prefix=prefix) for v in arr]
+        return self.ex_tokenizer.get_prefix_to_ids_dict()[prefix]
 
     def encode(self, string, **kwargs):
+        print(kwargs)
         return self.tokenizer.encode(string, **kwargs)
 
     def decode(self, tokens, **kwargs):
