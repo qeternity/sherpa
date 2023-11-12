@@ -105,15 +105,15 @@ class Transformers(LLM):
         if isinstance(model, str):
             # make sure transformers is installed
             try:
-                import transformers
+                import sherpa.transformer as transformer
             except:
                 raise Exception(
                     "Please install transformers with `pip install transformers` in order to use guidance.llms.Transformers!"
                 )
 
             if tokenizer is None:
-                tokenizer = transformers.AutoTokenizer.from_pretrained(model, **kwargs)
-            model = transformers.AutoModelForCausalLM.from_pretrained(model, **kwargs)
+                tokenizer = transformer.AutoTokenizer.from_pretrained(model, **kwargs)
+            model = transformer.AutoModelForCausalLM.from_pretrained(model, **kwargs)
 
         assert (
             tokenizer is not None
@@ -262,7 +262,7 @@ class TransformersSession(LLMSession):
         in_cache = key in llm_cache
         not_caching = (caching is not True and not self.llm.caching) or caching is False
         if not in_cache or not_caching:
-            import transformers
+            import sherpa.transformer as transformer
 
             assert (
                 prompt != ""
@@ -400,8 +400,8 @@ class TransformersSession(LLMSession):
                 pad_token_id=model_config.pad_token_id
                 if model_config.pad_token_id is not None
                 else self.llm.tokenizer.eos_token_id,
-                logits_processor=transformers.LogitsProcessorList(processors),
-                stopping_criteria=transformers.StoppingCriteriaList(stoppers),
+                logits_processor=transformer.LogitsProcessorList(processors),
+                stopping_criteria=transformer.StoppingCriteriaList(stoppers),
                 # past_key_values=self._past_key_values,
                 output_scores=logprobs is not None and logprobs > 0,
                 return_dict_in_generate=True,
