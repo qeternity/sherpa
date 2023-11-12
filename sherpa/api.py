@@ -68,11 +68,7 @@ async def stream_data(req: GenerateRequest):
         resp.pop("@raw_prefix", None)
         resp.pop("logging", None)
         resp.pop("accelerate", None)
-        return JSONResponse(
-            [
-                json.dumps(resp, indent=4),
-            ]
-        )
+        return JSONResponse(resp)
     finally:
         semaphore.release()
 
