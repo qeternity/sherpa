@@ -24,9 +24,11 @@ from exllamav2 import (
     ExLlamaV2Config,
     ExLlamaV2Cache,
     ExLlamaV2Tokenizer,
+)
+from exllamav2.generator import (
+    ExLlamaV2StreamingGenerator,
     ExLlamaV2Sampler,
 )
-from exllamav2.generator import ExLlamaV2StreamingGenerator
 
 import guidance
 from transformer import Transformers
