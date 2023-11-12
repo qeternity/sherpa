@@ -112,8 +112,8 @@ class Transformers(LLM):
                 )
 
             if tokenizer is None:
-                tokenizer = transformer.AutoTokenizer.from_pretrained(model, **kwargs)
-            model = transformer.AutoModelForCausalLM.from_pretrained(model, **kwargs)
+                tokenizer = transformers.AutoTokenizer.from_pretrained(model, **kwargs)
+            model = transformers.AutoModelForCausalLM.from_pretrained(model, **kwargs)
 
         assert (
             tokenizer is not None
@@ -400,8 +400,8 @@ class TransformersSession(LLMSession):
                 pad_token_id=model_config.pad_token_id
                 if model_config.pad_token_id is not None
                 else self.llm.tokenizer.eos_token_id,
-                logits_processor=transformer.LogitsProcessorList(processors),
-                stopping_criteria=transformer.StoppingCriteriaList(stoppers),
+                logits_processor=transformers.LogitsProcessorList(processors),
+                stopping_criteria=transformers.StoppingCriteriaList(stoppers),
                 # past_key_values=self._past_key_values,
                 output_scores=logprobs is not None and logprobs > 0,
                 return_dict_in_generate=True,
