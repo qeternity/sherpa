@@ -136,73 +136,6 @@ class TransformersSession(LLMSession):
         self._prefix_cache = []
 
     def __enter__(self):
-        # we only need decorators if we are using token acceleration
-        if self.llm.acceleration:
-            # decorate the prep step to preserve the initial past key values we have passed
-            def prep_step_decorator(method):
-                def decorate_prep_step(input_ids, **kwargs):
-                    # if we are extending the input ids with the cached tokens then
-                    # don't pass past key values to the input prep step, otherwise it
-                    # would delete all but the last input_ids, and we have already removed
-                    # the correct prefix from the input_ids (which is not always all but the last one)
-                    if len(self._prefix_cache) > 0:
-                        kwargs["past"] = None
-                        input_ids = input_ids[:, len(self._prefix_cache) :]
-                        # if "attention_mask" in kwargs:
-                        #     kwargs["attention_mask"] = kwargs["attention_mask"][:,len(self._prefix_cache):]
-                        model_kwargs = method(input_ids, **kwargs)
-
-                        # provide the past key values for the actual model call
-                        model_kwargs["past_key_values"] = self._past_key_values
-                        if (
-                            "position_ids" in model_kwargs
-                        ):  # models like OPT update the position ids internally
-                            model_kwargs["position_ids"] = model_kwargs["position_ids"][
-                                :, len(self._prefix_cache) :
-                            ]  # and update position ids
-
-                        # we only need to do this first time, after that the past key values will
-                        # be up until the last token, just like transformer models normally expect
-                        # so we can clear our cache and let transformers cache like normal
-                        self._prefix_cache = (
-                            []
-                        )  # this will get refilled once the generate call is done
-
-                        return model_kwargs
-                    else:
-                        return method(input_ids, **kwargs)
-
-                decorate_prep_step.__func__ = (
-                    method.__func__
-                )  # make us still look like a bound method
-                return decorate_prep_step
-
-            if getattr(self.llm.model_obj, "_orig_prepare_method", None) is None:
-                self.llm.model_obj._orig_prepare_method = (
-                    self.llm.model_obj.prepare_inputs_for_generation
-                )
-            self.llm.model_obj.prepare_inputs_for_generation = prep_step_decorator(
-                self.llm.model_obj._orig_prepare_method
-            )
-
-            # decorate the update step to save the past key values
-            def update_step_decorator(method):
-                def decorate_update_step(outputs, *args, **kwargs):
-                    # save the past key values
-                    self._past_key_values = getattr(outputs, "past_key_values", None)
-
-                    return method(outputs, *args, **kwargs)
-
-                return decorate_update_step
-
-            if getattr(self.llm.model_obj, "_orig_update_method", None) is None:
-                self.llm.model_obj._orig_update_method = (
-                    self.llm.model_obj._update_model_kwargs_for_generation
-                )
-            self.llm.model_obj._update_model_kwargs_for_generation = (
-                update_step_decorator(self.llm.model_obj._orig_update_method)
-            )
-
         return self
 
     async def __call__(
@@ -429,38 +362,9 @@ class TransformersSession(LLMSession):
                 generated_sequence = self.llm.model_obj.generate(**generate_args)
                 streamer.put(generated_sequence)
                 self.llm.cache[key] = streamer.__next__()
-                self._update_prefix_cache(streamer)
         return llm_cache[key]
 
-    def _update_prefix_cache(self, streamer):
-        # note what we now have cached and ready for our next call in this session
-        if self._past_key_values and len(streamer.generated_sequence) == 1:
-            self._prefix_cache = streamer.generated_sequence[0][
-                : self._past_key_values[0][0].shape[-2]
-            ]  # self._past_key_values is already saved, this just aligns with it
-
-    def _stream_then_save(self, streamer, key, thread):
-        list_out = []
-        for out in streamer:
-            list_out.append(out)
-            yield out
-        thread.join()  # clean up the thread
-        self.llm.cache[key] = list_out
-        self._update_prefix_cache(streamer)
-        self._last_computed_key = key
-
     def __exit__(self, exc_type, exc_value, traceback):
-        """Restore the model to its original state by removing monkey patches."""
-        if getattr(self.llm.model_obj, "_orig_prepare_method", None) is not None:
-            self.llm.model_obj.prepare_inputs_for_generation = (
-                self.llm.model_obj._orig_prepare_method
-            )
-            del self.llm.model_obj._orig_prepare_method
-        if getattr(self.llm.model_obj, "_orig_update_method", None) is not None:
-            self.llm.model_obj._update_model_kwargs_for_generation = (
-                self.llm.model_obj._orig_update_method
-            )
-            del self.llm.model_obj._orig_update_method
         return False
 
 
