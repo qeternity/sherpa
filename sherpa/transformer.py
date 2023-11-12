@@ -331,7 +331,7 @@ class TransformersSession(LLMSession):
 
         generated_sequence = self.llm.model_obj.generate(**generate_args)
         streamer.put(generated_sequence)
-        return streamer
+        return streamer.__next__()
 
     def __exit__(self, exc_type, exc_value, traceback):
         return False
