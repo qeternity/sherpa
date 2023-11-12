@@ -24,6 +24,7 @@ class Transformers(LLM):
         self,
         model=None,
         tokenizer=None,
+        ex_tokenizer=None,
         caching=True,
         token_healing=True,
         acceleration=True,
@@ -46,6 +47,7 @@ class Transformers(LLM):
         self.model_obj, self.tokenizer = self._model_and_tokenizer(
             model, tokenizer, **kwargs
         )
+        self.ex_tokenizer = ex_tokenizer
 
         self.model_name = model if isinstance(model, str) else model.__class__.__name__
         self.caching = caching
@@ -58,8 +60,7 @@ class Transformers(LLM):
             self.model_obj = self.model_obj.to(device)
         self.device = self.model_obj.device  # otherwise note the current device
 
-        self._token_prefix_map = self._build_token_prefix_map(model)
-        print(self._token_prefix_map)
+        self._token_prefix_map = self.ex_tokenizer.get_char_trie()
 
     def new_string_builder(self, starting_ids=None):
         return TransformersStringBuilder(self.tokenizer, starting_ids)
@@ -88,20 +89,6 @@ class Transformers(LLM):
         raise NotImplementedError(
             "In order to use chat role tags you need to use a chat-specific subclass of Transformers for your LLM from guidance.transformers.*!"
         )
-
-    def _build_token_prefix_map(self, model_name):
-        """Build a map from token to index."""
-        token_map = pygtrie.CharTrie()
-        for i in range(self.tokenizer.vocab_size):
-            s = self.id_to_token(i)
-            if s in token_map:
-                token_map[s].append(
-                    i
-                )  # handle duplicate token encodings... (GPT2 BPE has this oddly enough)
-            else:
-                token_map[s] = [i]
-
-        return token_map
 
     def _model_and_tokenizer(self, model, tokenizer, **kwargs):
         # intantiate the model and tokenizer if needed

@@ -106,13 +106,13 @@ if __name__ == "__main__":
     ex_config.prepare()
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
     ex_tokenizer = ExLlamaV2Tokenizer(ex_config)
-    print(ex_tokenizer.get_char_trie())
     model = Exllamav2HF.from_pretrained(model_path)
     model.config = config
 
     guidance.llm = Transformers(
         model,
         tokenizer,
+        ex_tokenizer,
         # generator,
         caching=False,
         acceleration=False,
