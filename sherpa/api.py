@@ -80,7 +80,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     model_path = args.model
     config = AutoConfig.from_pretrained(model_path)
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_path,
+        use_fast=True,
+        trust_remote_code=True,
+    )
     model = Exllamav2HF.from_pretrained(model_path)
     model.config = config
 
