@@ -15,7 +15,7 @@ from torch.nn import CrossEntropyLoss
 from transformers import GenerationConfig, PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutputWithPast
 
-from exllamav2 import ExLlamaV2, ExLlamaV2Config, ExLlamaV2Cache_8bit
+from exllamav2 import ExLlamaV2, ExLlamaV2Config, ExLlamaV2Cache
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class Exllamav2HF(PreTrainedModel):
         super().__init__(PretrainedConfig())
         self.ex_config = config
         self.ex_model = ExLlamaV2(config)
-        self.ex_cache = ExLlamaV2Cache_8bit(self.ex_model, lazy=True)
+        self.ex_cache = ExLlamaV2Cache(self.ex_model, lazy=True)
 
         self.ex_model.load_autosplit(self.ex_cache)
 
