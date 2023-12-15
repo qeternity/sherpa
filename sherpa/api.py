@@ -94,7 +94,7 @@ if __name__ == "__main__":
         tokenizer,
         caching=False,
         acceleration=False,
-        device=0,
     )
+    guidance.llm.device = None  # Prevent from messing with GPU
 
     uvicorn.run(app, host="0.0.0.0", port=args.port)
