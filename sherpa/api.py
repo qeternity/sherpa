@@ -57,8 +57,7 @@ async def stream_data(req: GenerateRequest):
         await semaphore.acquire()
     try:
         t0 = time.time()
-        prompt = req.prompt.replace("\\n", "\n")
-        # output = guidance(req.prompt)(**req.options)
+        prompt = req.prompt
         with elasticapm.capture_span("guidance"):
             output = guidance(prompt)()
         t1 = time.time()
