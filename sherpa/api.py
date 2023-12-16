@@ -5,7 +5,7 @@ import sys
 import time
 from typing import Any, Dict, List, Optional, Union
 
-from .prompt import Prompt
+from prompt import Prompt
 
 sys.path.append("/root/sherpa/exllamav2")
 sys.path.append("/root/sherpa/guidance")
