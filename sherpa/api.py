@@ -56,6 +56,9 @@ tokenizer = None
 model = None
 cache = None
 generator = None
+settings = ExLlamaV2Sampler.Settings()
+settings.temperature = 0
+settings.top_k = 1
 
 
 class GenerateRequest(BaseModel):
@@ -69,7 +72,6 @@ async def stream_data(req: GenerateRequest):
     try:
         t0 = time.time()
         # output = guidance(req.prompt)(**req.options)
-        settings = ExLlamaV2Sampler.Settings()
         output = Prompt(tokenizer, generator, settings, req.prompt)()
         t1 = time.time()
         _sec = t1 - t0
