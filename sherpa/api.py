@@ -68,6 +68,7 @@ async def stream_data(req: GenerateRequest):
     try:
         t0 = time.time()
         # output = guidance(req.prompt)(**req.options)
+        settings = ExLlamaV2Sampler.Settings()
         output = Prompt(generator, req.prompt)()
         t1 = time.time()
         _sec = t1 - t0
