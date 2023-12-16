@@ -2,11 +2,3 @@
 	path = exllamav2
 	url = https://github.com/zumalabs/exllamav2
 	branch = sherpa
-[submodule "exllama"]
-	path = exllama
-	url = https://github.com/zumalabs/exllama
-	branch = master
-[submodule "guidance"]
-	path = guidance
-	url = https://github.com/zumalabs/guidance
-	branch = sherpa
