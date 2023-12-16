@@ -5,22 +5,23 @@ import sys
 import time
 from typing import Any, Dict, List, Optional, Union
 
-from sherpa.prompt import Prompt
+from .prompt import Prompt
 
 sys.path.append("/root/sherpa/exllamav2")
 sys.path.append("/root/sherpa/guidance")
+sys.path.append("/root/sherpa/sherpa")
 
 import elasticapm
 import torch
 import uvicorn
 from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
-from exllamav2.exllamav2 import (
+from exllamav2 import (
     ExLlamaV2,
     ExLlamaV2Cache,
     ExLlamaV2Config,
     ExLlamaV2Tokenizer,
 )
-from exllamav2.exllamav2.generator import ExLlamaV2StreamingGenerator, ExLlamaV2Sampler
+from exllamav2.generator import ExLlamaV2StreamingGenerator, ExLlamaV2Sampler
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -89,14 +90,8 @@ if __name__ == "__main__":
     config.prepare()
     tokenizer = ExLlamaV2Tokenizer(config)
     model = ExLlamaV2(config)
+    cache = ExLlamaV2Cache(model, lazy=True)
+    model.load_autosplit(cache)
     generator = ExLlamaV2StreamingGenerator(model, cache, tokenizer)
-
-    guidance.llm = guidance.llms.Transformers(
-        model,
-        tokenizer,
-        caching=False,
-        acceleration=False,
-        device=0,
-    )
 
     uvicorn.run(app, host="0.0.0.0", port=args.port)
