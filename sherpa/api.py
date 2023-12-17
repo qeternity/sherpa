@@ -8,8 +8,6 @@ from typing import Any, Dict, List, Optional, Union
 from prompt import Prompt
 
 sys.path.append("/root/sherpa/exllamav2")
-sys.path.append("/root/sherpa/guidance")
-sys.path.append("/root/sherpa/sherpa")
 
 import elasticapm
 import torch
@@ -25,8 +23,6 @@ from exllamav2.generator import ExLlamaV2StreamingGenerator, ExLlamaV2Sampler
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-
-import guidance
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str, required=True, help="model path")

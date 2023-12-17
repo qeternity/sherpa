@@ -1,4 +1,4 @@
 fastapi==0.103.2
 elastic-apm==6.18.0
-transformers==4.33.3
-protobuf==4.24.3
+uvicorn==0.24.0.post1
+-r exllamav2/requirements.txt
