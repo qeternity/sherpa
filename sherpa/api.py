@@ -24,16 +24,11 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+torch.inference_mode()
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str, required=True, help="model path")
 parser.add_argument("--port", type=int, required=True, help="api port")
-
-# [init torch]:
-torch.set_grad_enabled(False)
-torch.cuda._lazy_init()
-torch.backends.cuda.matmul.allow_tf32 = True
-# torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
-torch.set_printoptions(precision=10)
 
 # Setup FastAPI:
 app = FastAPI()
