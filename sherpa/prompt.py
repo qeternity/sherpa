@@ -43,18 +43,18 @@ class Generate(NamedOp):
         name: str,
         max_tokens: Optional[str] = None,
         stop_regex: Optional[re.Pattern] = None,
-        skip_null: Optional[str] = None
+        depends: Optional[str] = None
     ) -> None:
         super().__init__(name)
         self.max_tokens = int(max_tokens.strip()) if max_tokens else None
         self.stop_regex = re.compile(stop_regex) if stop_regex else None
-        self.skip_null = skip_null
+        self.depends = depends
 
     def __repr__(self) -> str:
         return f"Generate(name={self.name}, max_tokens={self.max_tokens}, stop_regex={self.stop_regex})"
 
     def run(self, context: dict, tokenizer: Any, generator: Any, settings: Any, prompt: str) -> Tuple[str, Any]:
-        if self.skip_null and self.skip_null in context and context[self.skip_null] == self.NULL:
+        if self.depends and context.get(self.depends) is not None:
             return self.NULL, None
 
         input_ids = tokenizer.encode(prompt)
