@@ -86,7 +86,6 @@ class Generate(NamedOp):
             chunk, eos, _ = context.generator.stream()
             cnt += 1
             draft += chunk
-            print(draft)
             if eos or cnt == self.max_tokens:
                 break
             if self.stop_regex and self.stop_regex.search(draft):
