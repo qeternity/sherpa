@@ -36,6 +36,8 @@ class Echo(Op):
 
 
 class Generate(NamedOp):
+    NULL = "null"
+
     def __init__(
         self,
         name: str,
@@ -64,7 +66,8 @@ class Generate(NamedOp):
             if self.stop_regex and self.stop_regex.search(draft):
                 draft = self.stop_regex.split(draft, maxsplit=1)[0]
                 break
-        return draft
+
+        return draft, draft if draft != self.NULL else None
 
 
 class Prompt:
@@ -114,10 +117,11 @@ class Prompt:
             if isinstance(op, Echo):
                 self.draft += op.value
             else:
-                self.output[op.name] = op.run(
+                raw, parsed = op.run(
                     self.tokenizer,
                     self.generator,
                     self.settings,
                     self.draft,
                 )
-                self.draft += self.output[op.name]
+                self.output[op.name] = parsed
+                self.draft += raw
