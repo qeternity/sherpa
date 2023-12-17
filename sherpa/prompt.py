@@ -75,7 +75,7 @@ class Generate(NamedOp):
 
     def run(self, context: Context) -> Context:
         if self.depends and context.vars.get(self.depends) is None:
-            self._return_null(context)
+            return self._return_null(context)
 
         input_ids = context.tokenizer.encode(context.draft)
         context.generator.begin_stream(input_ids, context.settings, token_healing=True)
