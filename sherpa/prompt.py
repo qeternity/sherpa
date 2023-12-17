@@ -3,7 +3,7 @@ import re
 
 sys.path.append("../../exllamav2/")
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 # from exllamav2.exllamav2.generator import ExLlamaV2StreamingGenerator
 
@@ -43,15 +43,20 @@ class Generate(NamedOp):
         name: str,
         max_tokens: Optional[str] = None,
         stop_regex: Optional[re.Pattern] = None,
+        skip_null: Optional[str] = None
     ) -> None:
         super().__init__(name)
         self.max_tokens = int(max_tokens.strip()) if max_tokens else None
         self.stop_regex = re.compile(stop_regex) if stop_regex else None
+        self.skip_null = skip_null
 
     def __repr__(self) -> str:
         return f"Generate(name={self.name}, max_tokens={self.max_tokens}, stop_regex={self.stop_regex})"
 
-    def run(self, tokenizer: Any, generator: Any, settings: Any, prompt: str) -> None:
+    def run(self, context: dict, tokenizer: Any, generator: Any, settings: Any, prompt: str) -> Tuple(str, Any):
+        if self.skip_null and self.skip_null in context and context[self.skip_null] == self.NULL:
+            return self.NULL, None
+
         input_ids = tokenizer.encode(prompt)
         generator.begin_stream(input_ids, settings, token_healing=True)
 
@@ -79,13 +84,13 @@ class Prompt:
         self.settings = settings
         self.prompt = prompt
 
-        self.output: Dict[str, str] = dict()
+        self.context: Dict[str, Any] = dict()
         self.ops = list()
 
     def __call__(self) -> Dict[str, str]:
         self._prepare()
         self._run()
-        return self.output
+        return self.context
 
     def _prepare(self) -> None:
         for op_match in op_matcher.finditer(self.prompt):
@@ -118,10 +123,11 @@ class Prompt:
                 self.draft += op.value
             else:
                 raw, parsed = op.run(
+                    self.context,
                     self.tokenizer,
                     self.generator,
                     self.settings,
                     self.draft,
                 )
-                self.output[op.name] = parsed
+                self.context[op.name] = parsed
                 self.draft += raw
