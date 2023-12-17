@@ -53,7 +53,7 @@ class Generate(NamedOp):
     def __repr__(self) -> str:
         return f"Generate(name={self.name}, max_tokens={self.max_tokens}, stop_regex={self.stop_regex})"
 
-    def run(self, context: dict, tokenizer: Any, generator: Any, settings: Any, prompt: str) -> Tuple(str, Any):
+    def run(self, context: dict, tokenizer: Any, generator: Any, settings: Any, prompt: str) -> Tuple[str, Any]:
         if self.skip_null and self.skip_null in context and context[self.skip_null] == self.NULL:
             return self.NULL, None
 
