@@ -54,7 +54,7 @@ class Generate(NamedOp):
         return f"Generate(name={self.name}, max_tokens={self.max_tokens}, stop_regex={self.stop_regex})"
 
     def run(self, context: dict, tokenizer: Any, generator: Any, settings: Any, prompt: str) -> Tuple[str, Any]:
-        if self.depends and context.get(self.depends) is not None:
+        if self.depends and context.get(self.depends) is None:
             return self.NULL, None
 
         input_ids = tokenizer.encode(prompt)
