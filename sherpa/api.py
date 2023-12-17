@@ -67,12 +67,11 @@ async def stream_data(req: GenerateRequest):
         await semaphore.acquire()
     try:
         t0 = time.time()
-        # output = guidance(req.prompt)(**req.options)
-        output = Prompt(tokenizer, generator, settings, req.prompt)()
+        context = Prompt(tokenizer, generator, settings, req.prompt)()
         t1 = time.time()
         _sec = t1 - t0
-        print(f"Output generated in {_sec}")
-        return JSONResponse(output)
+        print(f"Generated {context.token_count} tokens in {_sec}")
+        return JSONResponse(context.vars)
     finally:
         semaphore.release()
 

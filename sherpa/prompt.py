@@ -14,13 +14,34 @@ op_matcher = re.compile(
 args_matcher = re.compile(r"""\s*(?P<key>\w+)=\"(?P<value>[^"]+)\"""")
 
 
+class Context:
+    def __init__(self, prompt: str, tokenizer, generator, settings) -> None:
+        self.prompt = prompt
+        self.tokenizer = tokenizer
+        self.generator = generator
+        self.settings = settings
+
+        self.draft = ""
+        self.vars: Dict[str, Any] = dict()
+
+        self.token_count = 0
+
+
 class Op:
     pass
 
 
 class NamedOp(Op):
+    NULL = "null"
+
     def __init__(self, name: str) -> None:
+        super().__init__()
         self.name = name
+
+    def _return_null(self, context: Context) -> Context:
+        context.draft += self.NULL
+        context.vars[self.name] = None
+        return context
 
 
 class Echo(Op):
@@ -31,19 +52,18 @@ class Echo(Op):
     def __repr__(self) -> str:
         return f"""Echo(value="{self.value.encode("unicode_escape").decode()}")"""
 
-    def run(self, generator: Any) -> str:
-        pass
+    def run(self, context: Context) -> Context:
+        context.draft += self.value
+        return context
 
 
 class Generate(NamedOp):
-    NULL = "null"
-
     def __init__(
         self,
         name: str,
         max_tokens: Optional[str] = None,
         stop_regex: Optional[re.Pattern] = None,
-        depends: Optional[str] = None
+        depends: Optional[str] = None,
     ) -> None:
         super().__init__(name)
         self.max_tokens = int(max_tokens.strip()) if max_tokens else None
@@ -53,47 +73,45 @@ class Generate(NamedOp):
     def __repr__(self) -> str:
         return f"Generate(name={self.name}, max_tokens={self.max_tokens}, stop_regex={self.stop_regex})"
 
-    def run(self, context: dict, tokenizer: Any, generator: Any, settings: Any, prompt: str) -> Tuple[str, Any]:
-        if self.depends and context.get(self.depends) is None:
-            return self.NULL, None
+    def run(self, context: Context) -> Context:
+        if self.depends and context.vars.get(self.depends) is None:
+            self._return_null(context)
 
-        input_ids = tokenizer.encode(prompt)
-        generator.begin_stream(input_ids, settings, token_healing=True)
+        input_ids = context.tokenizer.encode(context.draft)
+        context.generator.begin_stream(input_ids, context.settings, token_healing=True)
 
         cnt = 0
         draft = ""
         while True:
-            chunk, eos, _ = generator.stream()
+            chunk, eos, _ = context.generator.stream()
             cnt += 1
             draft += chunk
+            print(draft)
             if eos or cnt == self.max_tokens:
                 break
             if self.stop_regex and self.stop_regex.search(draft):
                 draft = self.stop_regex.split(draft, maxsplit=1)[0]
                 break
 
-        return draft, draft if draft != self.NULL else None
+        context.draft += draft
+        context.vars[self.name] = draft if draft != self.NULL else None
+        context.token_count += cnt
+        return context
 
 
 class Prompt:
     # def __init__(self, generator: ExLlamaV2StreamingGenerator, prompt: str) -> None:
     def __init__(self, tokenizer, generator, settings, prompt: str) -> None:
-        self.draft = ""
-        self.tokenizer = tokenizer
-        self.generator = generator
-        self.settings = settings
-        self.prompt = prompt
-
-        self.context: Dict[str, Any] = dict()
+        self.context = Context(prompt, tokenizer, generator, settings)
         self.ops = list()
 
-    def __call__(self) -> Dict[str, str]:
+    def __call__(self) -> Context:
         self._prepare()
         self._run()
         return self.context
 
     def _prepare(self) -> None:
-        for op_match in op_matcher.finditer(self.prompt):
+        for op_match in op_matcher.finditer(self.context.prompt):
             pre = op_match.group("pre")
             cmd = op_match.group("cmd")
             name = op_match.group("name")
@@ -119,15 +137,4 @@ class Prompt:
 
     def _run(self) -> None:
         for op in self.ops:
-            if isinstance(op, Echo):
-                self.draft += op.value
-            else:
-                raw, parsed = op.run(
-                    self.context,
-                    self.tokenizer,
-                    self.generator,
-                    self.settings,
-                    self.draft,
-                )
-                self.context[op.name] = parsed
-                self.draft += raw
+            self.context = op.run(self.context)
