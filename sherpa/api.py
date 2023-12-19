@@ -1,11 +1,13 @@
 import argparse
 import asyncio
+from contextlib import asynccontextmanager
 import json
 import sys
 import time
 from typing import Any, Dict, List, Optional, Union
 
-from prompt import Prompt
+from sherpa.prompt import Prompt
+from sherpa.prompt_async import Prompt as AsyncPrompt
 
 sys.path.append("/root/sherpa/exllamav2")
 
@@ -19,7 +21,7 @@ from exllamav2 import (
     ExLlamaV2Config,
     ExLlamaV2Tokenizer,
 )
-from exllamav2.generator import ExLlamaV2StreamingGenerator, ExLlamaV2Sampler
+from exllamav2.generator import ExLlamaV2StreamingGenerator, ExLlamaV2Sampler, ExLlamaV2BatchedGenerator, ExLlamaV2BatchedModel
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -29,9 +31,32 @@ torch.inference_mode()
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str, required=True, help="model path")
 parser.add_argument("--port", type=int, required=True, help="api port")
+parser.add_argument("--batches", type=int, required=False, help="num batches")
 
-# Setup FastAPI:
-app = FastAPI()
+NUM_BATCHES = 1
+
+tokenizer = None
+model = None
+cache = None
+generator = None
+settings = ExLlamaV2Sampler.Settings()
+settings.temperature = 0
+settings.top_k = 1
+generator_queue = asyncio.Queue()
+
+
+class GenerateRequest(BaseModel):
+    prompt: str
+
+@asynccontextmanager
+async def lifespan(app):
+    await generator_queue.put(generator)
+    for i in range(NUM_BATCHES):
+        await generator_queue.put(ExLlamaV2BatchedGenerator(model, cache.clone(), tokenizer))
+
+    yield
+
+app = FastAPI(lifespan=lifespan)
 # apm = make_apm_client(
 #     {
 #         "SERVER_URL": "https://apm.zuma.dev/",
@@ -42,48 +67,46 @@ app = FastAPI()
 # )
 # app.add_middleware(ElasticAPM, client=apm)
 
-semaphore = asyncio.Semaphore(1)
-tokenizer = None
-model = None
-cache = None
-generator = None
-settings = ExLlamaV2Sampler.Settings()
-settings.temperature = 0
-settings.top_k = 1
-
-
-class GenerateRequest(BaseModel):
-    prompt: str
-
 
 @app.post("/generate")
 async def stream_data(req: GenerateRequest):
-    with elasticapm.capture_span("acquire lock"):
-        await semaphore.acquire()
+    generator = await generator_queue.get()
     try:
         t0 = time.time()
-        context = Prompt(tokenizer, generator, settings, req.prompt)()
+        if NUM_BATCHES == 1:
+            context = Prompt(tokenizer, generator, settings, req.prompt)()
+        else:
+            context = await AsyncPrompt(tokenizer, generator, settings, req.prompt)()
         t1 = time.time()
         _sec = t1 - t0
         print(f"Generated {context.token_count} tokens in {_sec}")
         return JSONResponse(context.vars)
     finally:
-        semaphore.release()
-
-
-# -------
+        await generator_queue.put(generator)
 
 
 if __name__ == "__main__":
     args = parser.parse_args()
+
+    if args.batch:
+        NUM_BATCHES = args.batch
+
     model_path = args.model
     config = ExLlamaV2Config()
     config.model_dir = model_path
     config.prepare()
+    config.max_input_len = 8192
+    config.max_attention_size = 8192**2
     tokenizer = ExLlamaV2Tokenizer(config)
-    model = ExLlamaV2(config)
+    if NUM_BATCHES == 1:
+        model = ExLlamaV2(config)
+    else:
+        model = ExLlamaV2BatchedModel(config, NUM_BATCHES)
     cache = ExLlamaV2Cache(model, lazy=True)
     model.load_autosplit(cache)
-    generator = ExLlamaV2StreamingGenerator(model, cache, tokenizer)
+    if NUM_BATCHES == 1:
+        generator = ExLlamaV2StreamingGenerator(model, cache, tokenizer)
+    else:
+        generator = ExLlamaV2BatchedGenerator(model, cache, tokenizer)
 
     uvicorn.run(app, host="0.0.0.0", port=args.port)
