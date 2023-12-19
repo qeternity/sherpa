@@ -51,7 +51,7 @@ class GenerateRequest(BaseModel):
 @asynccontextmanager
 async def lifespan(app):
     await generator_queue.put(generator)
-    for i in range(NUM_BATCHES):
+    for i in range(NUM_BATCHES - 1):
         await generator_queue.put(ExLlamaV2BatchedGenerator(model, cache.clone(), tokenizer))
 
     yield
@@ -88,8 +88,8 @@ async def stream_data(req: GenerateRequest):
 if __name__ == "__main__":
     args = parser.parse_args()
 
-    if args.batch:
-        NUM_BATCHES = args.batch
+    if args.batches:
+        NUM_BATCHES = args.batches
 
     model_path = args.model
     config = ExLlamaV2Config()
