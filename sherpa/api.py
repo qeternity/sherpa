@@ -6,8 +6,8 @@ import sys
 import time
 from typing import Any, Dict, List, Optional, Union
 
-from sherpa.prompt import Prompt
-from sherpa.prompt_async import Prompt as AsyncPrompt
+from prompt import Prompt
+from prompt_async import Prompt as AsyncPrompt
 
 sys.path.append("/root/sherpa/exllamav2")
 
@@ -21,7 +21,7 @@ from exllamav2 import (
     ExLlamaV2Config,
     ExLlamaV2Tokenizer,
 )
-from exllamav2.generator import ExLlamaV2StreamingGenerator, ExLlamaV2Sampler, ExLlamaV2BatchedGenerator, ExLlamaV2BatchedModel
+from exllamav2.generator import ExLlamaV2StreamingGenerator, ExLlamaV2Sampler, ExLlamaV2BatchedGeneratorAsync, ExLlamaV2BatchedModelAsync
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -101,12 +101,12 @@ if __name__ == "__main__":
     if NUM_BATCHES == 1:
         model = ExLlamaV2(config)
     else:
-        model = ExLlamaV2BatchedModel(config, NUM_BATCHES)
+        model = ExLlamaV2BatchedModelAsync(config, NUM_BATCHES)
     cache = ExLlamaV2Cache(model, lazy=True)
     model.load_autosplit(cache)
     if NUM_BATCHES == 1:
         generator = ExLlamaV2StreamingGenerator(model, cache, tokenizer)
     else:
-        generator = ExLlamaV2BatchedGenerator(model, cache, tokenizer)
+        generator = ExLlamaV2BatchedGeneratorAsync(model, cache, tokenizer)
 
     uvicorn.run(app, host="0.0.0.0", port=args.port)
