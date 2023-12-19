@@ -52,7 +52,7 @@ class GenerateRequest(BaseModel):
 async def lifespan(app):
     await generator_queue.put(generator)
     for i in range(NUM_BATCHES - 1):
-        await generator_queue.put(ExLlamaV2BatchedGenerator(model, cache.clone(), tokenizer))
+        await generator_queue.put(ExLlamaV2BatchedGeneratorAsync(model, cache.clone(), tokenizer))
 
     yield
 
