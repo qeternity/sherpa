@@ -73,10 +73,7 @@ async def stream_data(req: GenerateRequest):
     generator = await generator_queue.get()
     try:
         t0 = time.time()
-        if NUM_BATCHES == 1:
-            context = Prompt(tokenizer, generator, settings, req.prompt)()
-        else:
-            context = await AsyncPrompt(tokenizer, generator, settings, req.prompt)()
+        context = await AsyncPrompt(tokenizer, generator, settings, req.prompt)()
         t1 = time.time()
         _sec = t1 - t0
         print(f"Generated {context.token_count} tokens in {_sec}")
@@ -95,18 +92,10 @@ if __name__ == "__main__":
     config = ExLlamaV2Config()
     config.model_dir = model_path
     config.prepare()
-    config.max_input_len = 8192
-    config.max_attention_size = 8192**2
     tokenizer = ExLlamaV2Tokenizer(config)
-    if NUM_BATCHES == 1:
-        model = ExLlamaV2(config)
-    else:
-        model = ExLlamaV2BatchedModelAsync(config, NUM_BATCHES)
+    model = ExLlamaV2BatchedModelAsync(config, NUM_BATCHES)
     cache = ExLlamaV2Cache(model, lazy=True)
     model.load_autosplit(cache)
-    if NUM_BATCHES == 1:
-        generator = ExLlamaV2StreamingGenerator(model, cache, tokenizer)
-    else:
-        generator = ExLlamaV2BatchedGeneratorAsync(model, cache, tokenizer)
+    generator = ExLlamaV2BatchedGeneratorAsync(model, cache, tokenizer)
 
     uvicorn.run(app, host="0.0.0.0", port=args.port)

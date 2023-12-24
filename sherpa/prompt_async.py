@@ -1,11 +1,10 @@
 import sys
 import re
 
-sys.path.append("../../exllamav2/")
+sys.path.append("/root/sherpa/exllamav2/")
 
-from typing import Any, Dict, Optional, Tuple
-
-# from exllamav2.exllamav2.generator import ExLlamaV2StreamingGenerator
+from typing import Any, Dict, Optional
+from exllamav2.generator.filters import ExLlamaV2SelectFilter
 
 # returns groups for cmd, name and args
 op_matcher = re.compile(
@@ -78,7 +77,8 @@ class Generate(NamedOp):
             return self._return_null(context)
 
         input_ids = context.tokenizer.encode(context.draft)
-        await context.generator.begin_stream(input_ids, context.settings, token_healing=True)
+        settings = context.settings.clone()
+        await context.generator.begin_stream(input_ids, settings, token_healing=True)
 
         cnt = 0
         draft = ""
@@ -90,6 +90,45 @@ class Generate(NamedOp):
                 break
             if self.stop_regex and self.stop_regex.search(draft):
                 draft = self.stop_regex.split(draft, maxsplit=1)[0]
+                break
+
+        context.draft += draft
+        context.vars[self.name] = draft if draft != self.NULL else None
+        context.token_count += cnt
+        return context
+
+
+class Select(NamedOp):
+    def __init__(
+        self,
+        name: str,
+        options: str,
+        depends: Optional[str] = None,
+    ) -> None:
+        super().__init__(name)
+        self.options = options.split(",")
+        self.depends = depends
+
+    def __repr__(self) -> str:
+        return f"Select(name={self.name}, options={self.options})"
+
+    def run(self, context: Context) -> Context:
+        if self.depends and context.vars.get(self.depends) is None:
+            return self._return_null(context)
+
+        settings = context.settings.clone()
+        settings.filters = [ExLlamaV2SelectFilter(context.generator.model, context.tokenizer, self.options),]
+
+        input_ids = context.tokenizer.encode(context.draft)
+        context.generator.begin_stream(input_ids, settings)
+
+        cnt = 0
+        draft = ""
+        while True:
+            chunk, eos, _ = context.generator.stream()
+            cnt += 1
+            draft += chunk
+            if eos:
                 break
 
         context.draft += draft
@@ -122,6 +161,8 @@ class Prompt:
 
             if cmd == "gen":
                 klass = Generate
+            elif cmd == "select":
+                klass = Select
             else:
                 raise ValueError(f"Unknown command: {cmd}")
 
