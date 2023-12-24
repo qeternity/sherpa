@@ -112,7 +112,7 @@ class Select(NamedOp):
     def __repr__(self) -> str:
         return f"Select(name={self.name}, options={self.options})"
 
-    def run(self, context: Context) -> Context:
+    async def run(self, context: Context) -> Context:
         if self.depends and context.vars.get(self.depends) is None:
             return self._return_null(context)
 
@@ -120,12 +120,12 @@ class Select(NamedOp):
         settings.filters = [ExLlamaV2SelectFilter(context.generator.model, context.tokenizer, self.options),]
 
         input_ids = context.tokenizer.encode(context.draft)
-        context.generator.begin_stream(input_ids, settings)
+        await context.generator.begin_stream(input_ids, settings)
 
         cnt = 0
         draft = ""
         while True:
-            chunk, eos, _ = context.generator.stream()
+            chunk, eos, _ = await context.generator.stream()
             cnt += 1
             draft += chunk
             if eos:
