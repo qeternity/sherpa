@@ -4,7 +4,7 @@ import re
 sys.path.append("/root/sherpa/exllamav2/")
 
 from typing import Any, Dict, Optional
-from exllamav2.generator.filters import ExLlamaV2SelectFilter
+from exllamav2.generator.filters import ExLlamaV2SelectFilter, ExLlamaV2RegexFilter
 
 # returns groups for cmd, name and args
 op_matcher = re.compile(
@@ -61,12 +61,18 @@ class Generate(NamedOp):
         self,
         name: str,
         max_tokens: Optional[str] = None,
-        stop_regex: Optional[re.Pattern] = None,
+        regex: Optional[str] = None,
+        stop_regex: Optional[str] = None,
         depends: Optional[str] = None,
     ) -> None:
         super().__init__(name)
         self.max_tokens = int(max_tokens.strip()) if max_tokens else None
-        self.stop_regex = re.compile(stop_regex) if stop_regex else None
+        self.stop_regex = stop_regex
+        if regex:
+            assert stop_regex is not None
+            self.regex = rf"({regex}|[nul]+)({stop_regex}.*)?" if regex else None
+        else:
+            self.regex = None
         self.depends = depends
 
     def __repr__(self) -> str:
@@ -78,6 +84,10 @@ class Generate(NamedOp):
 
         input_ids = context.tokenizer.encode(context.draft)
         settings = context.settings.clone()
+
+        if self.regex:
+            settings.filters = [ExLlamaV2RegexFilter(context.generator.model, context.tokenizer, self.regex),]
+
         await context.generator.begin_stream(input_ids, settings, token_healing=True)
 
         cnt = 0
@@ -88,9 +98,11 @@ class Generate(NamedOp):
             draft += chunk
             if eos or cnt == self.max_tokens:
                 break
-            if self.stop_regex and self.stop_regex.search(draft):
-                draft = self.stop_regex.split(draft, maxsplit=1)[0]
+            if self.stop_regex and re.search(self.stop_regex, draft):
                 break
+
+        if self.stop_regex and re.search(self.stop_regex, draft):
+            draft = re.split(self.stop_regex, draft, maxsplit=1)[0]
 
         context.draft += draft
         context.vars[self.name] = draft if draft != self.NULL else None
@@ -121,9 +133,11 @@ class Select(NamedOp):
 
         input_ids = context.tokenizer.encode(context.draft)
         await context.generator.begin_stream(input_ids, settings)
+        # await context.generator.begin_stream(input_ids, settings, token_healing=True)
 
         cnt = 0
         draft = ""
+        # context.generator.first_token = True # hack, not sure why needed for select with token healing
         while True:
             chunk, eos, _ = await context.generator.stream()
             cnt += 1
