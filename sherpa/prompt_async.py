@@ -92,6 +92,7 @@ class Generate(NamedOp):
 
         cnt = 0
         draft = ""
+        context.generator.first_token = True # hack, not sure why needed for select with token healing
         while True:
             chunk, eos, _ = await context.generator.stream()
             cnt += 1
