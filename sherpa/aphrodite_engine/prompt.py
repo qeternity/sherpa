@@ -90,7 +90,7 @@ class Generate(NamedOp):
         cnt = 0
         draft = ""
         async for resp in context.engine.generate(context.draft, sampling_params, request_id):
-            draft = resp.outputs[0].text
+            draft = resp.outputs[0].text.lstrip("\n")
             if self.stop_regex and re.search(self.stop_regex, draft):
                 await context.engine.abort(request_id)
                 break
