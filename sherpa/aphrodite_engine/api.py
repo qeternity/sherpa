@@ -20,25 +20,16 @@ class GenerateRequest(BaseModel):
 
 
 app = FastAPI()
-request_counter = Counter()
 
 
 @app.post("/generate")
 async def generate(req: GenerateRequest):
     t0 = time.time()
-
-    request_id = str(next(request_counter))
-    sampling_params = SamplingParams(temperature=0.0, max_tokens=1024)
-    context = await Prompt(tokenizer, generator, settings, req.prompt)()
-    outputs = engine.generate(req.prompt, sampling_params, request_id)
-    async for output in outputs:
-        print(output)
-
+    context = await Prompt(engine, req.prompt)()
     t1 = time.time()
     _sec = t1 - t0
-    print(f"Generated {len(output.outputs[0].token_ids)} tokens in {_sec}")
-
-    return JSONResponse({"done": True})
+    print(f"Generated {context.token_count} tokens in {_sec}")
+    return JSONResponse(context.vars)
 
 
 if __name__ == "__main__":
