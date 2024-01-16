@@ -2,4 +2,5 @@ uvicorn
 fastapi
 elastic-apm
 flash-attn
+wheel
 -r exllamav2/requirements.txt
