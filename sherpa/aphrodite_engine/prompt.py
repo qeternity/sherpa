@@ -85,7 +85,7 @@ class Generate(NamedOp):
             raise NotImplementedError("Regex not implemented")
         
         request_id = str(next(request_counter))
-        sampling_params = SamplingParams(temperature=0.0, max_tokens=self.max_tokens)
+        sampling_params = SamplingParams(temperature=0.0, max_tokens=self.max_tokens or 1024)
 
         cnt = 0
         draft = ""

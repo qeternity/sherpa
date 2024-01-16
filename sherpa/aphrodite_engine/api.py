@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from aphrodite import AsyncEngineArgs, AsyncAphrodite
 
-from .prompt import Prompt
+from prompt import Prompt
 
 torch.inference_mode()
 
