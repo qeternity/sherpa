@@ -93,7 +93,7 @@ class Generate(NamedOp):
         s += context.draft.strip(" ")
         s += gen("gen", temperature=0, regex=regex)
     
-    async def run(self, s, context: Context) -> Context:
+    async def run(self, context: Context) -> Context:
         if self.depends and context.vars.get(self.depends) is None:
             return self._return_null(context)
         
