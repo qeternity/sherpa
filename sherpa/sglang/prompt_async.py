@@ -103,6 +103,7 @@ class Generate(NamedOp):
         async for chunk in state.text_async_iter():
             cnt += 1
             draft += chunk
+            draft = draft.lstrip()
             if self.stop_regex and re.search(self.stop_regex, draft):
                 break
 
