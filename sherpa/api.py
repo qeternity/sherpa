@@ -68,6 +68,11 @@ app = FastAPI(lifespan=lifespan)
 # app.add_middleware(ElasticAPM, client=apm)
 
 
+@app.get("/healthz")
+async def stream_data():
+    return JSONResponse({"status": "gucci"})
+
+
 @app.post("/generate")
 async def stream_data(req: GenerateRequest):
     generator = await generator_queue.get()
