@@ -88,9 +88,10 @@ class Generate(NamedOp):
         return f"Generate(name={self.name}, max_tokens={self.max_tokens}, stop_regex={self.stop_regex})"
 
     @function
-    def gen(self, s, context: Context):
+    @staticmethod
+    def gen(s, context: Context, regex=None):
         s += context.draft.strip(" ")
-        s += gen("gen", temperature=0, regex=self.regex)
+        s += gen("gen", temperature=0, regex=regex)
     
     async def run(self, s, context: Context) -> Context:
         if self.depends and context.vars.get(self.depends) is None:
@@ -98,7 +99,7 @@ class Generate(NamedOp):
         
         cnt = 0
         draft = ""
-        state = self.gen(context=context)
+        state = self.gen(context=context, regex=self.regex)
         async for chunk in state.text_async_iter():
             cnt += 1
             draft += chunk

@@ -6,7 +6,6 @@ import sys
 import time
 from typing import Any, Dict, List, Optional, Union
 
-from prompt import Prompt
 from prompt_async import Prompt as AsyncPrompt
 
 sys.path.append("/root/sherpa/exllamav2")
