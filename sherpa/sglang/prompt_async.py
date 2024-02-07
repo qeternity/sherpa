@@ -22,15 +22,10 @@ args_matcher = re.compile(r"""\s*(?P<key>\w+)=\"(?P<value>[^"]+)\"""")
 
 
 class Context:
-    def __init__(self, prompt: str, tokenizer, generator, settings) -> None:
+    def __init__(self, prompt: str) -> None:
         self.prompt = prompt
-        self.tokenizer = tokenizer
-        self.generator = generator
-        self.settings = settings
-
         self.draft = ""
         self.vars: Dict[str, Any] = dict()
-
         self.token_count = 0
 
 
@@ -161,9 +156,8 @@ class Generate(NamedOp):
 
 
 class Prompt:
-    # def __init__(self, generator: ExLlamaV2StreamingGenerator, prompt: str) -> None:
-    def __init__(self, tokenizer, generator, settings, prompt: str) -> None:
-        self.context = Context(prompt, tokenizer, generator, settings)
+    def __init__(self, prompt: str) -> None:
+        self.context = Context(prompt)
         self.ops = list()
 
     async def __call__(self) -> Context:
