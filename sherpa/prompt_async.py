@@ -57,6 +57,11 @@ class Echo(Op):
 
 
 class Generate(NamedOp):
+    DEFAULT_STOP_STRINGS = [
+        "<|im_end|>",
+        "</s>",
+    ]
+
     def __init__(
         self,
         name: str,
@@ -67,12 +72,13 @@ class Generate(NamedOp):
     ) -> None:
         super().__init__(name)
         self.max_tokens = int(max_tokens.strip()) if max_tokens else None
-        self.stop_regex = stop_regex
+        stop_list = [re.escape(s) for s in self.DEFAULT_STOP_STRINGS]
+        if stop_regex:
+            stop_list.append(stop_regex)
+        self.stop_regex = rf"({'|'.join(stop_list)})"
         if regex:
             assert stop_regex is not None
-            self.regex = rf"({regex}|[nul]+)({stop_regex}.*)?" if regex else None
-        else:
-            self.regex = None
+        self.regex = rf"({regex}|[nul]+)({self.stop_regex}.*)?" if regex else None
         self.depends = depends
 
     def __repr__(self) -> str:
@@ -86,13 +92,19 @@ class Generate(NamedOp):
         settings = context.settings.clone()
 
         if self.regex:
-            settings.filters = [ExLlamaV2RegexFilter(context.generator.model, context.tokenizer, self.regex),]
+            settings.filters = [
+                ExLlamaV2RegexFilter(
+                    context.generator.model, context.tokenizer, self.regex
+                ),
+            ]
 
         await context.generator.begin_stream(input_ids, settings, token_healing=True)
 
         cnt = 0
         draft = ""
-        context.generator.first_token = True # hack, not sure why needed for select with token healing
+        context.generator.first_token = (
+            True  # hack, not sure why needed for select with token healing
+        )
         while True:
             chunk, eos, _ = await context.generator.stream()
             cnt += 1
