@@ -31,8 +31,7 @@ class Context:
 
 @function
 def _gen(s, name:str, context: Context, regex=None):
-    s += context.draft.strip(" ")
-    s += gen(name, temperature=0, regex=regex)
+    s += context.draft.strip(" ") + gen(name, temperature=0, regex=regex)
 
 
 class Op:
@@ -100,8 +99,8 @@ class Generate(NamedOp):
         
         cnt = 0
         draft = ""
-        state = _gen(name=self.name, context=context, regex=self.regex)
-        async for chunk in state.text_async_iter(var_name=self.name):
+        state = _gen.run(name=self.name, context=context, regex=self.regex, stream=True)
+        async for chunk in state.text_async_iter(self.name):
             cnt += 1
             draft += chunk
             draft = draft.lstrip()
