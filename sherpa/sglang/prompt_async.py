@@ -87,8 +87,8 @@ class Generate(NamedOp):
     def __repr__(self) -> str:
         return f"Generate(name={self.name}, max_tokens={self.max_tokens}, stop_regex={self.stop_regex})"
 
-    @function
     @staticmethod
+    @function
     def gen(s, context: Context, regex=None):
         s += context.draft.strip(" ")
         s += gen("gen", temperature=0, regex=regex)
